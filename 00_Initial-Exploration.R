@@ -9,9 +9,7 @@ library(ggiraph)
 
 # Load Data ---------------------------------------------------------------
 sheets <- excel_sheets((here("data/Inflation-data.xlsx")))
-for (i in 2:length(sheets)) {
-  to_
-}
+
 
 
 data_raw <- read_xlsx(here("data/Inflation-data.xlsx"), sheet = 3)
@@ -29,29 +27,15 @@ data <- data  %>%
          date = as.Date(glue("{year}-{month}-01")))
 
 data %>% 
-  filter(country %in% c("Austria", "Argentina", "United States")) %>% 
+  #filter(country %in% c("United States", "Austria", "Argentina")) %>% 
   select(country, date, headline_consumer_price_index) %>% 
   group_by(country) %>% 
-  mutate(inflation = (headline_consumer_price_index/lag(headline_consumer_price_index,n = 1))/lag(headline_consumer_price_index,n = 1),
-         inflation = inflation*100) %>% 
+  mutate(inflation = (headline_consumer_price_index - lag(headline_consumer_price_index,12))/lag(headline_consumer_price_index,12)*100) %>% 
   na.omit() %>% 
   ggplot(aes(date, inflation, color = country)) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim = c(-10,20)) +
+  theme(legend.position = "none")
   
+ggsave(here("figures/error_art.png"), dpi = 600)
 
-data %>% 
-  filter(country %in% c("United States")) %>% 
-  select(country, date, headline_consumer_price_index) %>% 
-  ggplot(aes(date, headline_consumer_price_index)) +
-  geom_line()
-
-# 
-# data %>% 
-#   filter(year(date) > 2000) %>% 
-#   mutate(inflation_level = case_when(headline_consumer_price_index < 1 ~ "low",
-#                                      headline_consumer_price_index >= 1 & headline_consumer_price_index < 5~ "moderate",
-#                                      headline_consumer_price_index >= 1 & headline_consumer_price_index < 5~ "low",
-#                                      headline_consumer_price_index >= 1 & headline_consumer_price_index < 5~ "low",
-#                                      )) %>% 
-# 
-# quantile(data$headline_consumer_price_index, probs = seq(0,1,.01), na.rm = T)
