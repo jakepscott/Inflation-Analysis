@@ -10,8 +10,6 @@ library(ggiraph)
 # Load Data ---------------------------------------------------------------
 sheets <- excel_sheets((here("data/Inflation-data.xlsx")))
 
-
-
 data_raw <- read_xlsx(here("data/Inflation-data.xlsx"), sheet = 3)
 
 
