@@ -37,25 +37,41 @@ data <- data %>%
   mutate(imf_country_code=as.character(imf_country_code)) %>% 
   left_join(imf_to_iso, by = c("imf_country_code" = "imf_code"))
 
-subset <- data %>%
-  filter(year>=2010) %>% 
+data <- data %>%
+  filter(year>=1980) %>%
+  mutate(decade = case_when(year(date) < 1990 ~ "1980's",
+                            year(date) >= 1990 & year(date) <2000 ~ "1990's",
+                            year(date) >=2000 & year(date) <2010 ~ "2000's",
+                            year(date) >=2020 ~ "2010's")) %>% 
   group_by(iso_code) %>% 
   mutate(inflation = (headline_consumer_price_index - lag(headline_consumer_price_index,12))/lag(headline_consumer_price_index,12)*100) %>% 
-  ungroup() %>% 
-  group_by(iso_code) %>% 
+  ungroup()
+
+data_agg <- data %>% 
+  group_by(decade, iso_code) %>% 
   summarise(inflation = mean(inflation, na.rm = T)) %>% 
   ungroup()
   
+to_plot <- data_agg %>% 
+  left_join(overall_avg) %>% 
+  mutate(z_score = (inflation - mean_inf)/sd)
 
-
-joined <- subset %>% 
-  select(iso_code, inflation) %>% 
-  filter(iso_code !="SDN") %>% 
+joined <- to_plot %>% 
+  select(decade, iso_code, inflation, z_score) %>% 
   right_join(world, by = c("iso_code"="iso_a3")) %>% 
+  filter(!is.na(decade)) %>% 
   st_as_sf()
+
+joined %>% 
+  ggplot() +
+  geom_sf(aes(fill = z_score)) +
+  scale_fill_viridis_b(option = "plasma") +
+  facet_wrap(~decade) +
+  theme_void()
 
 joined %>% 
   ggplot() +
   geom_sf(aes(fill = log(inflation))) +
   scale_fill_viridis_b(option = "plasma") +
+  facet_wrap(~decade) +
   theme_void()
