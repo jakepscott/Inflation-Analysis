@@ -9,6 +9,7 @@ library(maps)
 library("rnaturalearth")
 library("rnaturalearthdata")
 library(sf)
+library(gganimate)
 
 # Load Data ---------------------------------------------------------------
 data_raw <- read_xlsx(here("data/Inflation-data.xlsx"), sheet = 3)
@@ -39,10 +40,14 @@ data <- data %>%
 
 data <- data %>%
   filter(year>=1980) %>%
-  mutate(decade = case_when(year(date) < 1990 ~ "1980's",
-                            year(date) >= 1990 & year(date) <2000 ~ "1990's",
-                            year(date) >=2000 & year(date) <2010 ~ "2000's",
-                            year(date) >=2020 ~ "2010's")) %>% 
+  mutate(decade = case_when(year(date) < 1985 ~ "1980-1984",
+                            year(date) >= 1985 & year(date) <1990 ~ "1985-1989",
+                            year(date) >=1990 & year(date) <1995 ~ "1990-1994's",
+                            year(date) >=1995 & year(date) <2000 ~ "1995-1999",
+                            year(date) >=2000 & year(date) <2005 ~ "2000-2004",
+                            year(date) >=2005 & year(date) <2010 ~ "2005-2009",
+                            year(date) >=2010 & year(date) <2015 ~ "2010-2014",
+                            year(date) >=2015 ~ "2015-2020")) %>% 
   group_by(iso_code) %>% 
   mutate(inflation = (headline_consumer_price_index - lag(headline_consumer_price_index,12))/lag(headline_consumer_price_index,12)*100) %>% 
   ungroup()
@@ -50,28 +55,71 @@ data <- data %>%
 data_agg <- data %>% 
   group_by(decade, iso_code) %>% 
   summarise(inflation = mean(inflation, na.rm = T)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(inflation_level = case_when(inflation > 50 ~ ">50",
+                                     #inflation >= 50 & inflation < 100 ~ "Super High",
+                                     #inflation >= 25 & inflation < 50 ~ "Very High",
+                                     inflation >= 10 & inflation < 50 ~ "10-50",
+                                     inflation >= 2.5 & inflation < 10 ~ "5-10",
+                                     inflation >= 1 & inflation < 2.5 ~ "1-5",
+                                     inflation < 1 ~ "<1",
+                                     T ~ NA_character_))
+
+data_agg$inflation_level <- factor(data_agg$inflation_level, ordered = T,
+       labels = c(">50","10-50","5-10",'1-5',"<1"),
+       levels = c(">50","10-50","5-10",'1-5',"<1"))
   
+overall_avg <- data %>% 
+  group_by(iso_code) %>% 
+  summarise(mean_inf = mean(inflation, na.rm = T),
+            sd = sd(inflation, na.rm = T))
+
 to_plot <- data_agg %>% 
   left_join(overall_avg) %>% 
   mutate(z_score = (inflation - mean_inf)/sd)
 
-joined <- to_plot %>% 
-  select(decade, iso_code, inflation, z_score) %>% 
-  right_join(world, by = c("iso_code"="iso_a3")) %>% 
-  filter(!is.na(decade)) %>% 
+joined <- to_plot %>%
+  select(decade, iso_code, inflation, inflation_level, z_score) %>%
+  right_join(world, by = c("iso_code"="iso_a3")) %>%
+  filter(!is.na(decade)) %>%
   st_as_sf()
+# 
+# joined %>% 
+#   ggplot() +
+#   geom_sf(aes(fill = z_score)) +
+#   scale_fill_viridis_b(option = "plasma") +
+#   facet_wrap(~decade) +
+#   theme_void()
 
-joined %>% 
-  ggplot() +
-  geom_sf(aes(fill = z_score)) +
-  scale_fill_viridis_b(option = "plasma") +
-  facet_wrap(~decade) +
-  theme_void()
+# joined %>% 
+#   ggplot() +
+#   geom_sf(aes(fill = log(inflation))) +
+#   scale_fill_viridis_b(option = "plasma") +
+#   facet_wrap(~decade) +
+#   theme_void()
 
-joined %>% 
+# joined %>% 
+#   ggplot() +
+#   geom_sf(aes(fill = inflation_level)) +
+#   scale_fill_brewer(palette =  "YlOrRd", direction = -1, na.value = "grey") +
+#   guides(fill = guide_legend(nrow = 1)) +
+#   facet_wrap(~decade) +
+#   theme_void() +
+#   theme(legend.position = "top") 
+
+animated <- joined %>% 
   ggplot() +
-  geom_sf(aes(fill = log(inflation))) +
-  scale_fill_viridis_b(option = "plasma") +
-  facet_wrap(~decade) +
-  theme_void()
+  geom_sf(aes(fill = inflation_level)) +
+  transition_manual(decade) +
+  scale_fill_brewer(palette =  "YlOrRd", direction = -1, na.value = "grey") +
+  guides(fill = guide_legend(nrow = 1)) +
+  labs(title = 'Frame {frame} of {nframes}') +
+  theme_void() +
+  theme(legend.position = "top")
+
+animated +
+  ggtitle('Now showing {current_frame}',
+          subtitle = 'Frame {frame} of {nframes}')
+
+
+anim_save(animation = animated, filename = "Map.gif", path = here("figures/"))
