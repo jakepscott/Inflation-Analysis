@@ -32,3 +32,40 @@ anim_save(animation = map_anim,
           end_pause = 12,
           nframes = 100, 
           fps = 5)
+
+
+
+# Make a continuous Inflation map -----------------------------------------
+# cutoff <- data_agg %>% 
+#   mutate(inflation = ifelse(inflation>20, 20, inflation),
+#          inflation = ifelse(inflation < 0, 0, inflation))
+# 
+# #Join in the world data
+# joined_cutoff <- cutoff %>%
+#   right_join(world, by = c("iso_code"="iso_a3")) %>%
+#   st_as_sf()
+# 
+# 
+# map_anim <- joined_cutoff %>% 
+#   filter(year > 2000 & year < 2021) %>% 
+#   ggplot() +
+#   geom_sf(fill = "grey50") +
+#   geom_sf(aes(fill = inflation)) +
+#   guides(fill = guide_legend(nrow = 1)) + 
+#   scale_fill_viridis(direction = 1, option = "inferno") +
+#   transition_time(year) +
+#   labs(title = "Headline CPI in: {closest_frame}") +
+#   theme_void() +
+#   theme(legend.position = "top")
+# 
+# 
+# 
+# #animate(plot = map_anim, 
+# #          end_pause = 1)
+# 
+# anim_save(animation = map_anim, 
+#           filename = "Yearly_inflation_map_cutoff.gif", 
+#           path = here("figures/"),
+#           end_pause = 12,
+#           nframes = 100, 
+#           fps = 5)
