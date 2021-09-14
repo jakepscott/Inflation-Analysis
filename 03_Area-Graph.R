@@ -84,15 +84,15 @@ plot_data %>%
   scale_color_manual(values = my_pal) +
   scale_y_continuous(labels = scales::percent) +
   facet_wrap(~inflation_level) +
-  labs(title = "The percent of people living in countries with low to moderate inflation rates has increased notably since the 1970s",
-       subtitle = "The percent of people living in countries where annual inflation is below 3% has risen from just 12% to 42%, while the number living in countries <br>where annual inflation is 10% or high has declined from 40% to 13%",
+  labs(title = "The percent of people living in countries with high inflation has dropped meaningfully <br>since the 1970s",
+       subtitle = "The percent of people living in countries where annual inflation is 10% or higher has declined from 40% to 13%, while the <br>percent living in countries where annual inflation is below 3% has risen from just 12% to 42%",
        y = "Percent of Population",
        x = NULL,
        caption = "Plot: @jakepscott2020 | Data: World Bank via Ha, Kose, & Ohnsorge (2021)") +
   theme_minimal(base_size = 12, base_family = "Roboto Condensed") +
-  theme(plot.title = element_markdown(face = "bold", size = rel(1.2)),
-        plot.subtitle = element_markdown(face = "plain", size = rel(1), color = "grey30"),
-        plot.caption = element_text(face = "italic", size = rel(0.8), 
+  theme(plot.title = element_markdown(face = "bold", size = rel(1.5)),
+        plot.subtitle = element_markdown(face = "plain", size = rel(1.2), color = "grey30"),
+        plot.caption = element_text(face = "italic", size = rel(1), 
                                     color = "grey50"),
         legend.position = "none",
         axis.text.x = element_text(size=rel(1)),
